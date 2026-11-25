@@ -10,7 +10,7 @@ API REST (Express 5, TypeScript, ESM) com um servidor MCP exposto no mesmo proce
 - MCP local: `npm run mcp:stdio` (pedidos) e `npm run mcp:qa` (massa de teste)
 
 ## Mapa
-- `src/routes` e `src/server.ts`: HTTP. Sem regra de negócio.
+- `src/server.ts`: HTTP (rotas REST em `/api` e o endpoint `/mcp`). Sem regra de negócio.
 - `src/services`: regra de negócio. Único lugar que lança `ErroDeNegocio`.
 - `src/data`: acesso a dados (em memória).
 - `src/mcp`: tools/resources/prompts. Só orquestra services, nunca acessa `src/data` direto.

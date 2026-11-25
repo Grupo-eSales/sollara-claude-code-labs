@@ -9,7 +9,10 @@ O repositório já contém a solução de referência. Em sala, cada lab pede pa
 
 Instalação de todas as ferramentas, por sistema operacional: [`requisitos.html`](https://sollara.ai/treinamento/requisitos.html) (também na pasta do treinamento).
 
+Código dos labs: https://github.com/Grupo-eSales/sollara-claude-code-labs (clone com o nome `labs`, que é como este roteiro chama a pasta).
+
 ```
+git clone https://github.com/Grupo-eSales/sollara-claude-code-labs.git labs
 cd labs/loja
 npm install
 node ../preparar-lab.mjs inicio        # cria o repositório git, o commit e a marca "base"; roda os 11 testes
@@ -76,8 +79,9 @@ mv CLAUDE.md CLAUDE.md.off
 mv .claude .claude.off
 ```
 
-2. Abra `claude` e peça: `adicione o campo "observacao" opcional ao pedido e exponha na API`. Não aprove nada ainda; rode `/context` e anote os tokens e quantos arquivos ele leu para descobrir comandos e estrutura.
-3. Saia, descarte as mudanças, restaure os arquivos e repita o mesmo pedido em uma sessão nova:
+2. Rodada 1: abra `claude` e peça: `adicione o campo "observacao" opcional ao pedido e exponha na API`. Não aprove nada ainda.
+3. Meça: rode `/context` e anote os tokens, quantos arquivos ele leu para descobrir comandos e estrutura e quantas vezes pediu permissão.
+4. Saia, descarte as mudanças e restaure os arquivos:
 
 ```
 git checkout .
@@ -85,11 +89,11 @@ mv CLAUDE.md.off CLAUDE.md
 mv .claude.off .claude
 ```
 
-4. Compare: tokens no `/context`, se ele rodou `npm test` sozinho, se criou teste, e quais prompts de permissão apareceram.
-5. Edite um arquivo em `tests/` e confirme com `/context` (seção Memory files) que `rules/testes.md` só entra no contexto depois que um arquivo que casa com `paths` é lido ou editado.
+5. Rodada 2: sessão nova, mesmo pedido, mesmas anotações. Compare: tokens no `/context`, se ele rodou `npm test` sozinho, se criou teste, e quais prompts de permissão apareceram.
+6. Edite um arquivo em `tests/` e confirme com `/context` (seção Memory files) que `rules/testes.md` só entra no contexto depois que um arquivo que casa com `paths` é lido ou editado.
 
 **Por papel**
-- Dev: acrescente uma rule `routes.md` com `paths: ["src/routes/**/*.ts"]` e duas convenções reais do seu time.
+- Dev: acrescente uma rule `services.md` com `paths: ["src/services/**/*.ts"]` e duas convenções reais do seu time.
 - QA: escreva no `CLAUDE.md` a definição de pronto do time (o que precisa estar verde).
 - Produto: revise o "Mapa" do `CLAUDE.md`. Um agente novo entenderia o que o produto faz?
 
@@ -104,7 +108,7 @@ Referência: `src/mcp-qa/index.ts`.
 
 **Por que importa no dia a dia:** Todo time tem tarefas que o modelo faz mal sozinho (massa de teste válida, consulta a homologação, cálculo com regra fiscal). Em vez de corrigir o agente toda vez, o time entrega a ferramenta certa uma vez.
 
-**Resultado esperado:** `claude mcp list` mostra `qa-massa` como connected; ao pedir "gere 5 CPFs de teste e valide o terceiro", o agente chama as duas tools sem vocês citarem o nome delas e a validação volta válida. Com `console.log` a conexão quebra; com `console.error` volta a funcionar.
+**Resultado esperado:** `claude mcp list` mostra `qa-massa` com `✔ Connected`; depois do passo 6, ao pedir "gere 5 CPFs de teste e valide o terceiro", o agente chama as duas tools sem vocês citarem o nome delas e a validação volta válida. Com `console.log` a conexão quebra; com `console.error` volta a funcionar.
 
 **Antes de começar**
 - `node ../preparar-lab.mjs 2` terminando com `PRONTO`. Ele guarda o Lab 1, religa `CLAUDE.md` e `.claude` se ficaram desligados e desliga o `.mcp.json` do projeto (vira `.mcp.json.off`), para o nome `qa-massa` ficar livre.
@@ -141,10 +145,10 @@ console.error('pronto'); // stdout é do protocolo: log só em stderr
 
 ```
 claude mcp add qa-massa --scope local -- node --import tsx src/mcp-qa/meu.ts
-claude mcp list          # deve mostrar "connected"
+claude mcp list          # deve mostrar "✔ Connected"
 ```
 
-3. No Claude Code: `/mcp` para ver as tools, depois peça `gere 5 CPFs de teste e valide o terceiro`.
+3. No Claude Code: `/mcp` para ver as tools, depois peça `gere 5 CPFs de teste`.
 4. Em outro terminal, liste os processos: o servidor vive enquanto a sessão existe. Feche o Claude e confira de novo.
 
 ```
@@ -153,11 +157,11 @@ Get-CimInstance Win32_Process -Filter "name='node.exe'" | Select-Object ProcessI
 ```
 
 5. Troque `console.error` por `console.log`, reconecte e observe a falha. Desfaça.
-6. Evolua a tool: `outputSchema` + `structuredContent` e `annotations: { readOnlyHint: true }`. Adicione `validar_cpf`.
+6. Evolua a tool: `outputSchema` + `structuredContent` e `annotations: { readOnlyHint: true }`. Adicione `validar_cpf`, reconecte e peça `gere 5 CPFs de teste e valide o terceiro`.
 
 **Por papel**
 - QA: adicione uma tool `gerar_pedido_teste` que devolve um pedido sintético em um status escolhido (`z.enum`).
-- Dev: remova o registro local e religue o `.mcp.json` do projeto (`claude mcp remove qa-massa` e depois `mv .mcp.json.off .mcp.json`), para o time inteiro receber o servidor.
+- Dev: remova o registro local e religue o `.mcp.json` do projeto (`claude mcp remove qa-massa` e depois `mv .mcp.json.off .mcp.json`). Ele registra para o time inteiro o servidor de referência (`src/mcp-qa/index.ts`); o `preparar-lab.mjs 3` desliga o arquivo de novo antes do próximo lab.
 - Produto: escreva a `description` de `gerar_pedido_teste` antes de o Dev implementar. Ela precisa dizer quando usar e quando não usar.
 
 **Discussão:** por que essa tool existe se a LLM "sabe" gerar CPF? (aleatoriedade e dígito verificador são trabalho de código, não de modelo.)
@@ -199,7 +203,7 @@ claude mcp list
 
    O script mostra o comando que executou, com o token escondido: `claude mcp add --transport http loja-pedidos http://localhost:3000/mcp --header "Authorization: Bearer <token>"`.
 
-   No Claude Code: `a Ana (ana@exemplo.com) quer saber dos pedidos dela` e depois `cancele o PED-1003`. O que acontece com o cancelamento?
+   No Claude Code, ainda com o token de leitura: `a Ana (ana@exemplo.com) quer saber dos pedidos dela` e depois `cancele o PED-1003`. O que acontece com o cancelamento?
 4. Troque para o token de escrita (`node scripts/registrar-mcp.mjs escrita`, que remove o registro anterior e cria o novo). Repita `cancele o PED-1002` e leia a resposta: o erro `CANCELAMENTO_NAO_PERMITIDO` traz a `dica` e o modelo muda de rota sozinho.
 5. Implemente uma tool nova nos services e no MCP: `resumo_do_cliente(clienteEmail)` devolvendo total de pedidos, valor somado e contagem por status.
 
@@ -212,7 +216,7 @@ claude mcp list
 
 ---
 
-## Lab 4 — Testar um servidor MCP (Dia 2, 30 min)
+## Lab 4 — Testar um servidor MCP (Dia 2, 20 min, depois do recap)
 
 **Objetivo:** tratar o MCP como contrato testável, sem LLM no laço.
 Referência: `tests/mcp-contrato.test.ts`.
@@ -340,12 +344,12 @@ node .claude/hooks/bloquear-comandos.mjs "git push --force"
 
 Feature: **exportar pedidos de um cliente em CSV** (endpoint REST + tool MCP).
 
-1. **Produto (5 min):** `/criar-prd exportar pedidos de um cliente em CSV`. Responda às perguntas, revise os critérios de aceitação.
-2. **Dev (7 min), sessão nova em plan mode (Shift+Tab):**
+1. **Produto (4 min):** `/criar-prd exportar pedidos de um cliente em CSV`. Responda às perguntas, revise os critérios de aceitação.
+2. **Dev (6 min), sessão nova em plan mode (Shift+Tab):**
    `leia tasks/<slug>/prd.md e proponha a spec técnica em tasks/<slug>/techspec.md: contratos, arquivos a criar e alterar, testes ligados a cada CA`.
    Leia a spec de verdade. É a etapa mais barata para corrigir rumo.
 3. **QA (em paralelo ao passo 2):** `/plano-de-testes <slug>` e ajuste os casos.
-4. **Execução (10 min), em worktree para não travar a pasta principal:**
+4. **Execução (9 min), em worktree para não travar a pasta principal:**
 
 ```
 git add tasks
@@ -358,8 +362,8 @@ claude
 
    Prompt: `implemente tasks/<slug>/techspec.md. Termine com npm test e npm run typecheck verdes.`
    Não interfira durante a execução. Anote onde teve vontade de interferir: é um guia ou sensor faltando.
-5. **QA (5 min), sessão nova:** valide cada CA do PRD contra o que foi construído e registre evidências em `tasks/<slug>/qa.md`.
-6. **Review (3 min):** `use o subagente revisor-mcp` e depois `/code-review`.
+5. **QA (4 min), sessão nova:** valide cada CA do PRD contra o que foi construído e registre evidências em `tasks/<slug>/qa.md`.
+6. **Review (2 min):** `use o subagente revisor-mcp` e depois `/code-review`.
 7. Limpeza: voltem para `labs/loja` (`cd ../loja`) e rodem `git worktree remove ../loja-csv` depois do merge.
 
 **Discussão:** qual artefato evitou mais retrabalho? O que faltou no PRD que só apareceu no QA?
