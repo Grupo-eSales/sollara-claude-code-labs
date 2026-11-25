@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "qa-massa": {
+      "command": "node",
+      "args": ["--import", "tsx", "src/mcp-qa/index.ts"]
+    },
+    "loja-pedidos": {
+      "type": "http",
+      "url": "${LOJA_MCP_URL:-http://localhost:3000/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${MCP_TOKEN_LEITURA}"
+      }
+    }
+  }
+}

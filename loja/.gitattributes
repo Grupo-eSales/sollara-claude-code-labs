@@ -1,0 +1,2 @@
+# Mesmo fim de linha em todos os sistemas (evita diferenças falsas entre Windows e macOS/Linux).
+* text=auto eol=lf
