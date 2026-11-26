@@ -108,7 +108,7 @@ Referência: `src/mcp-qa/index.ts`.
 
 **Por que importa no dia a dia:** Todo time tem tarefas que o modelo faz mal sozinho (massa de teste válida, consulta a homologação, cálculo com regra fiscal). Em vez de corrigir o agente toda vez, o time entrega a ferramenta certa uma vez.
 
-**Resultado esperado:** `claude mcp list` mostra `qa-massa` com `✔ Connected`; depois do passo 6, ao pedir "gere 5 CPFs de teste e valide o terceiro", o agente chama as duas tools sem vocês citarem o nome delas e a validação volta válida. Com `console.log` a conexão quebra; com `console.error` volta a funcionar.
+**Resultado esperado:** `claude mcp list` mostra `qa-massa` com `✔ Connected`; depois do passo 6, ao pedir "gere 5 CPFs de teste e valide o terceiro", o agente chama as duas tools sem vocês citarem o nome delas e a validação volta válida. Com `console.log`, `node scripts/ver-stdout-mcp.mjs` mostra o `pronto` como texto solto no meio do protocolo; com `console.error`, o stdout volta a ter só JSON.
 
 **Antes de começar**
 - `node ../preparar-lab.mjs 2` terminando com `PRONTO`. Ele guarda o Lab 1, religa `CLAUDE.md` e `.claude` se ficaram desligados e desliga o `.mcp.json` do projeto (vira `.mcp.json.off`), para o nome `qa-massa` ficar livre.
@@ -156,7 +156,13 @@ ps aux | grep mcp-qa                                              # macOS, Linux
 Get-CimInstance Win32_Process -Filter "name='node.exe'" | Select-Object ProcessId, CommandLine   # PowerShell
 ```
 
-5. Troque `console.error` por `console.log`, reconecte e observe a falha. Desfaça.
+5. Suje o canal do protocolo: troque `console.error` por `console.log` e rode, em outro terminal, o comando abaixo. Ele inicia o seu servidor, envia a primeira mensagem do protocolo e mostra cada linha que volta. O `pronto` aparece como `TEXTO SOLTO` no stdout, misturado às mensagens JSON. Desfaça e rode de novo: o `pronto` passa para o stderr e o stdout fica limpo.
+
+```
+node scripts/ver-stdout-mcp.mjs          # lê src/mcp-qa/meu.ts; passe outro caminho se quiser
+```
+
+   A conexão não cai: a versão atual do Claude Code descarta a linha que não é JSON e `claude mcp list` continua mostrando `✔ Connected`. Mesmo assim a regra vale. A especificação do MCP proíbe o servidor de escrever no stdout qualquer coisa que não seja mensagem do protocolo, e outro cliente pode não ser tolerante.
 6. Evolua a tool: `outputSchema` + `structuredContent` e `annotations: { readOnlyHint: true }`. Adicione `validar_cpf`, reconecte e peça `gere 5 CPFs de teste e valide o terceiro`.
 
 **Por papel**
