@@ -84,6 +84,29 @@ if (temCommit() && !git('rev-parse', '--verify', 'refs/tags/base').ok) {
   feito('marca "base" criada: é o ponto para onde o --do-zero volta');
 }
 
+// A marca "base" é uma foto do projeto no dia em que este script rodou pela primeira vez. Se o material
+// foi atualizado depois (git pull na pasta labs), o "original" de hoje é o do repositório do material:
+// depois de voltar à base, traz de lá os arquivos de loja e move a marca "base" para essa versão.
+function atualizarBase() {
+  const labs = dirname(loja);
+  const fora = (...args) => {
+    const r = spawnSync('git', args, { cwd: labs, encoding: 'utf8' });
+    return { ok: r.status === 0, saida: `${r.stdout ?? ''}`.trim() };
+  };
+  const topoFora = fora('rev-parse', '--show-toplevel');
+  if (!topoFora.ok || realpathSync(topoFora.saida) !== realpathSync(labs)) return; // material sem git (pasta copiada)
+  const noMaterial = new Set(fora('ls-files', '--', 'loja').saida.split(/\r?\n/).filter(Boolean).map(f => f.replace(/^loja\//, '')));
+  if (!noMaterial.size || !fora('checkout', 'HEAD', '--', 'loja').ok) return;
+  // arquivo que existia na base antiga e saiu do material
+  for (const f of git('ls-files').saida.split(/\r?\n/).filter(Boolean)) if (!noMaterial.has(f)) git('rm', '-q', '--', f);
+  if (!sujo()) return;
+  const versao = fora('rev-parse', '--short', 'HEAD').saida;
+  if (commitar(`material atualizado (${versao})`)) {
+    git('tag', '-f', 'base');
+    feito(`material atualizado para a versão ${versao}: a marca "base" agora aponta para ela`);
+  }
+}
+
 if (lab !== 'inicio' && temCommit()) {
   if (doZero) {
     const agora = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
@@ -91,6 +114,7 @@ if (lab !== 'inicio' && temCommit()) {
     git('branch', `salvo-${agora}`);
     git('reset', '--hard', 'base');
     feito(`projeto de volta ao original. O que você tinha feito está na branch salvo-${agora}`);
+    atualizarBase();
   } else if (sujo()) {
     commitar(`antes do lab ${lab}`);
     feito(`trabalho anterior guardado no commit "antes do lab ${lab}"`);
